@@ -1,228 +1,335 @@
-let timeLeft = document.querySelector(".time-left");
-let quizContainer = document.getElementById("container");
-let nextBtn = document.getElementById("next-button");
-let countOfQuestion = document.querySelector(".number-of-question");
-let displayContainer = document.getElementById("display-container");
-let scoreContainer = document.querySelector(".score-container");
-let restart = document.getElementById("restart");
-let userScore = document.getElementById("user-score");
-let startScreen = document.querySelector(".start-screen");
-let startButton = document.getElementById("start-button");
-let questionCount;
-let scoreCount = 0;
-let count = 11;
-let countdown;
-
-const quizArray = [
+const questions = [
     {
-        id: "0",
-        question: "HTML stands for _________ ? ",
-        options: [
-            "Hyperlinks and Text Markup Language",
-            "Home Tool Markup Language",
-            "HyperText Markup Language",
-            "HyperText and links Markup Language",
-        ],
-        correct: "HyperText Markup Language",
+        question: "Choose the correct HTML element for the largest heading:",
+        options: ["Head Tag", "H6 Tag", "Heading Tag", "H1 Tag"],
+        answer: "D",
+        explanation: "The H1 tag is used for the most important heading (largest) in HTML."
     },
     {
-        id: "1",
-        question: "Who is making the Web standards?",
-        options: [
-            "Microsoft",
-            "Google",
-            "The World Wide Web Consortium",
-            "Mozilla",
-        ],
-        correct: "The World Wide Web Consortium",
+        question: "Which HTML element defines the title of a document?",
+        options: ["Meta tag", "Head Tag", "Title Tag", "Body Tag"],
+        answer: "C",
+        explanation: "The title tag defines the title of the document shown in browser's title bar or tab."
     },
     {
-        id: "2",
-        question: "HTML document is saved using?",
-        options: [
-            ".html",
-            ".htl",
-            ".htnl",
-            ".htyl",
-        ],
-        correct: ".html",
+        question: "How can you open a link in a new browser window?",
+        options: ["Blank", "Target", "Same", "Open"],
+        answer: "A",
+        explanation: "Using target='_blank' attribute in anchor tag opens link in new window."
     },
     {
-        id: "3",
-        question: "What is the smallest header in HTML by default?",
-        options: [
-            "h1",
-            "h6",
-            "h3",
-            "h5",
-        ],
-        correct: "h6",
+        question: "Which property adds space outside elements?",
+        options: ["Span", "Padding", "Margin", "Outline"],
+        answer: "C",
+        explanation: "Margin property adds space outside the element's border."
     },
     {
-        id: "4",
-        question: "Which HTML tag is called the root element of an HTML document?",
-        options: [
-            "head",
-            "title",
-            "body",
-            "html",
-        ],
-        correct: "html",
-    },
-    {
-        id: "5",
-        question: "Which of the following tag is used to insert a line-break in HTML?",
-        options: [
-            "br tag",
-            "b tag",
-            "head tag",
-            "pre tag",
-        ],
-        correct: "br tag",
-    },
-    {
-        id: "6",
-        question: "Which of the following element is responsible for making the text bold in HTML?",
-        options: [
-            "pre tag",
-            "a tag",
-            "b tag",
-            "br tag",
-        ],
-        correct: "b tag",
-    },
-    {
-        id: "7",
-        question: "Which is not an Internet Protocol?",
-        options: [
-            "IP",
-            "FTP",
-            "STP",
-            "HTTP",
-        ],
-        correct: "STP",
-    },
-    {
-        id: "8",
-        question: "Google (www.google.com) is a: ?",
-        options: [
-            "Number in Math",
-            "Search Engine",
-            "Directory of images",
-            "Chart service on the web",
-        ],
-        correct: "Search Engine",
-    },
-    {
-        id: "9",
-        question: "Which of the following attribute is used to provide a unique name to an element?",
-        options: [
-            "id",
-            "type",
-            "class",
-            "all the above",
-        ],
-        correct: "id",
-    },
+        question: "Which programming language is used for web development?",
+        options: ["Python", "JavaScript", "C++", "Java"],
+        answer: "B",
+        explanation: "JavaScript is the primary language for interactive web development."
+    }
 ];
-restart.addEventListener("click", () => {
-    initial();
-    displayContainer.classList.remove("hide");
-    scoreContainer.classList.add("hide");
-});
-nextBtn.addEventListener(
-    "click", 
-    (displayNext = () => {
-    questionCount += 1;
-    if (questionCount == quizArray.length) {
-        displayContainer.classList.add("hide");
-        scoreContainer.classList.remove("hide");
-        userScore.innerHTML = "Your score is " + scoreCount + " out of " + questionCount;
+
+let currentQuestionIndex = 0;
+let score = 0;
+let selectedAnswers = new Array(questions.length).fill(null);
+let timerInterval;
+let timeLeft = 40;
+
+const startButton = document.getElementById("start-quiz");
+const quizContent = document.getElementById("quiz-content");
+const questionText = document.getElementById("question-text");
+const questionNumber = document.getElementById("question-number");
+const optionsContainer = document.getElementById("options-container");
+const scoreDisplay = document.getElementById("score").querySelector("span");
+const prevButton = document.getElementById("prev");
+const nextButton = document.getElementById("next");
+const resetButton = document.getElementById("reset");
+const finalScoreDisplay = document.getElementById("final-score");
+const timerDisplay = document.getElementById("timer").querySelector("span");
+const reviewScreen = document.getElementById("review-screen");
+const downloadBtn = document.getElementById("download-btn");
+const resultActions = document.querySelector(".result-actions");
+
+startButton.addEventListener("click", startQuiz);
+nextButton.addEventListener("click", moveToNextQuestion);
+prevButton.addEventListener("click", moveToPreviousQuestion);
+resetButton.addEventListener("click", resetQuiz);
+downloadBtn.addEventListener("click", downloadResults);
+
+function startQuiz() {
+    startButton.style.display = "none";
+    quizContent.style.display = "block";
+    loadQuestion();
+}
+
+function loadQuestion() {
+    clearInterval(timerInterval);
+
+    if (!selectedAnswers[currentQuestionIndex]) {
+        startTimer();
     }
-    else {
-        countOfQuestion.innerHTML = questionCount + 1 + " of " + quizArray.length + " Question ";
-        quizDisplay(questionCount);
-        count = 11;
-        clearInterval(countdown);
-        timerDisplay();
-    }
-})
-);
-const timerDisplay = () => {
-    countdown = setInterval(() => {
-        count--;
-        timeLeft.innerHTML = `${count}s`;
-        if (count == 0) {
-            clearInterval(countdown);
-            displayNext();
+
+    optionsContainer.innerHTML = "";
+    finalScoreDisplay.style.display = "none";
+    reviewScreen.style.display = "none";
+    resultActions.style.display = "none";
+
+    questionNumber.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+    const currentQuestion = questions[currentQuestionIndex];
+    questionText.textContent = currentQuestion.question;
+
+    const labels = ["A", "B", "C", "D"];
+    currentQuestion.options.forEach((option, index) => {
+        const optionBox = document.createElement("div");
+        optionBox.className = "option-box";
+
+        const abcdBox = document.createElement("div");
+        abcdBox.className = "abcd-box";
+        abcdBox.textContent = labels[index];
+
+        const optionText = document.createElement("div");
+        optionText.className = "option-text";
+        optionText.textContent = option;
+
+        optionBox.appendChild(abcdBox);
+        optionBox.appendChild(optionText);
+        optionsContainer.appendChild(optionBox);
+
+        if (selectedAnswers[currentQuestionIndex] === labels[index]) {
+            optionBox.classList.add(labels[index] === currentQuestion.answer ? "correct" : "incorrect");
+            optionBox.classList.add("disabled");
+        }
+
+        optionBox.addEventListener("click", () => selectAnswer(labels[index], currentQuestion.answer, optionBox));
+    });
+
+    prevButton.disabled = currentQuestionIndex === 0;
+    nextButton.textContent = currentQuestionIndex === questions.length - 1 ? "Submit" : "Next";
+}
+
+function startTimer() {
+    timeLeft = 40;
+    timerDisplay.textContent = timeLeft;
+    document.getElementById("timer").style.color = "";
+
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        timerDisplay.textContent = timeLeft;
+
+        if (timeLeft <= 10) {
+            document.getElementById("timer").style.color = "#f44336";
+        }
+
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            handleTimeOut();
         }
     }, 1000);
-};
-const quizDisplay = (questionCount) => {
-    let quizCards = document.querySelectorAll(".container-mid");
-    quizCards.forEach((card) => {
-        card.classList.add("hide");
-    });
-    quizCards[questionCount].classList.remove("hide");
-};
-function quizCreater() {
-    quizArray.sort(() => Math.random() - 0.5);
-    for (let i of quizArray) {
-        i.options.sort(() => Math.random() - 0.5);
-        let div = document.createElement("div");
-        div.classList.add("container-mid", "hide");
-        countOfQuestion.innerHTML = 1 + " of " + quizArray.length + " Question ";
-        let question_DIV = document.createElement("p");
-        question_DIV.classList.add("question");
-        question_DIV.innerHTML = i.question;
-        div.appendChild(question_DIV);
-        div.innerHTML += `
-        <button class="option-div" onclick="checker(this)"> ${i.options[0]} </button>
-        <button class="option-div" onclick="checker(this)"> ${i.options[1]} </button>
-        <button class="option-div" onclick="checker(this)"> ${i.options[2]} </button>
-        <button class="option-div" onclick="checker(this)"> ${i.options[3]} </button>
+}
+
+function selectAnswer(selectedOption, correctAnswer, optionElement) {
+    if (selectedAnswers[currentQuestionIndex]) return;
+
+    clearInterval(timerInterval);
+    selectedAnswers[currentQuestionIndex] = selectedOption;
+
+    const allOptions = document.querySelectorAll(".option-box");
+    allOptions.forEach(opt => opt.classList.add("disabled"));
+
+    optionElement.classList.add(selectedOption === correctAnswer ? "correct" : "incorrect");
+
+    if (selectedOption !== correctAnswer) {
+        const correctIndex = ["A", "B", "C", "D"].indexOf(correctAnswer);
+        allOptions[correctIndex].classList.add("correct");
+    }
+
+    updateScore();
+}
+
+function updateScore() {
+    score = selectedAnswers.reduce((total, answer, idx) =>
+        answer === questions[idx].answer ? total + 10 : total, 0);
+    scoreDisplay.textContent = score;
+}
+
+function moveToNextQuestion() {
+    if (!selectedAnswers[currentQuestionIndex] && timeLeft > 0) {
+        alert("Please select an answer before proceeding!");
+        return;
+    }
+
+    currentQuestionIndex++;
+    if (currentQuestionIndex < questions.length) {
+        loadQuestion();
+    } else {
+        showFinalScore();
+    }
+}
+
+function moveToPreviousQuestion() {
+    clearInterval(timerInterval);
+    if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        loadQuestion();
+    }
+}
+
+function handleTimeOut() {
+    if (!selectedAnswers[currentQuestionIndex]) {
+        alert("Time's up! This question will be marked as unanswered.");
+        selectedAnswers[currentQuestionIndex] = "TIMEOUT";
+
+        const allOptions = document.querySelectorAll(".option-box");
+        allOptions.forEach(opt => opt.classList.add("disabled"));
+        questionText.innerHTML += '<div class="timeout-marker">(Time Expired)</div>';
+    }
+    moveToNextQuestion();
+}
+
+function showFinalScore() {
+    // Clear and hide the timer
+    clearInterval(timerInterval);
+    document.getElementById("timer").style.display = "none";
+
+    questionText.style.display = "none";
+    questionNumber.style.display = "none";
+    optionsContainer.innerHTML = "";
+    prevButton.style.display = "none";
+    nextButton.style.display = "none";
+
+    const percentage = (score / 50) * 100;
+    let message = "";
+
+    if (percentage >= 80) message = "Excellent! 🎉";
+    else if (percentage >= 60) message = "Good job! 👍";
+    else if (percentage >= 40) message = "Not bad! 😊";
+    else message = "Keep practicing! 💪";
+
+    finalScoreDisplay.innerHTML = `
+        <div class="completion-header">Quiz Completed</div>
+        <div class="score-display">${message}</div>
+        <div class="score-display">Your Score: <strong>${score}/50</strong></div>
+    `;
+    finalScoreDisplay.style.display = "block";
+
+    showReviewScreen();
+    resultActions.style.display = "flex";
+
+    if (percentage >= 60) {
+        generateConfetti();
+    }
+}
+
+function showReviewScreen() {
+    reviewScreen.innerHTML = "<h3>Review Your Answers:</h3>";
+    reviewScreen.style.display = "block";
+
+    questions.forEach((question, index) => {
+        const reviewItem = document.createElement("div");
+        reviewItem.className = "review-item";
+
+        const userAnswer = selectedAnswers[index];
+        const isCorrect = userAnswer === question.answer;
+
+        if (isCorrect) {
+            reviewItem.classList.add("correct");
+        } else if (userAnswer) {
+            reviewItem.classList.add("incorrect");
+        }
+
+        reviewItem.innerHTML = `
+            <strong>Q${index + 1}:</strong> ${question.question}<br>
+            <span class="${isCorrect ? 'correct-text' : 'incorrect-text'}">
+                Your Answer: ${userAnswer || "Not Answered"}
+            </span><br>
+            <span class="correct-text">Correct Answer: ${question.answer}</span><br>
+            <em>${question.explanation}</em>
         `;
-        quizContainer.appendChild(div);
-    }
-}
-function checker(userOption) {
-    let userSolution = userOption.innerText;
-    let question = document.getElementsByClassName("container-mid")[questionCount];
-    let options = question.querySelectorAll(".option-div");
-    if (userSolution === quizArray[questionCount].correct) {
-        userOption.classList.add("correct");
-        scoreCount++;
-    }
-    else {
-        userOption.classList.add("incorrect");
-        options.forEach((element) => {
-            if (element.innerHTML = quizArray[questionCount].correct) {
-                element.classList.add("correct");
-            }
-        });
-    }
-    clearInterval(countdown);
-    options.forEach((element) => {
-        element.disabled = true;
+
+        reviewScreen.appendChild(reviewItem);
     });
 }
-function initial() {
-    quizContainer.innerHTML = "";
-    questionCount = 0;
-    scoreCount = 0;
-    scoreCount = 0;
-    count = 11;
-    clearInterval(countdown);
-    timerDisplay();
-    quizCreater();
-    quizDisplay(questionCount);
+
+function resetQuiz() {
+    currentQuestionIndex = 0;
+    score = 0;
+    selectedAnswers = new Array(questions.length).fill(null);
+
+    // Reset timer display
+    document.getElementById("timer").style.display = "";
+
+    scoreDisplay.textContent = "0";
+    finalScoreDisplay.style.display = "none";
+    reviewScreen.style.display = "none";
+    resultActions.style.display = "none";
+    questionNumber.style.display = "block";
+    prevButton.style.display = "inline-block";
+    nextButton.style.display = "inline-block";
+    nextButton.textContent = "Next";
+    questionText.style.display = "block";
+
+    startButton.style.display = "block";
+    quizContent.style.display = "none";
 }
-startButton.addEventListener("click", () => {
-    startScreen.classList.add("hide");
-    displayContainer.classList.remove("hide");
-    initial();
-});
-window.onload = () => {
-    startScreen.classList.remove("hide");
-    displayContainer.classList.add("hide");
-};
+
+function downloadResults() {
+    let content = `Quiz Results\n\n`;
+    content += `Final Score: ${score}/50 (${Math.round((score / 50) * 100)}%)\n\n`;
+
+    questions.forEach((q, idx) => {
+        const userAnswer = selectedAnswers[idx] || "Not Answered";
+        const isCorrect = userAnswer === q.answer;
+
+        content += `Question ${idx + 1}: ${q.question}\n`;
+        content += `Your Answer: ${userAnswer} ${isCorrect ? '✓' : '✗'}\n`;
+        content += `Correct Answer: ${q.answer}\n`;
+        content += `Explanation: ${q.explanation}\n\n`;
+    });
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `quiz_results_${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function generateConfetti() {
+    const defaults = {
+        spread: 70,
+        ticks: 100,
+        gravity: 0.5,
+        decay: 0.94,
+        startVelocity: 30,
+        colors: ['#4361ee', '#3f37c9', '#4cc9f0', '#f72585', '#f8961e'],
+        particleCount: 50,
+        scalar: 1.2
+    };
+
+    confetti({
+        ...defaults,
+        particleCount: 100
+    });
+
+    setTimeout(() => {
+        confetti({
+            ...defaults,
+            particleCount: 50,
+            scalar: 1.5,
+            angle: 60,
+            spread: 55
+        });
+        confetti({
+            ...defaults,
+            particleCount: 50,
+            scalar: 1.5,
+            angle: 120,
+            spread: 55
+        });
+    }, 150);
+}
